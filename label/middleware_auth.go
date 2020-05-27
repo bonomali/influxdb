@@ -3,9 +3,11 @@ package label
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/influxdata/influxdb/v2"
 	"github.com/influxdata/influxdb/v2/authorizer"
+	icontext "github.com/influxdata/influxdb/v2/context"
 	kithttp "github.com/influxdata/influxdb/v2/kit/transport/http"
 )
 
@@ -104,10 +106,16 @@ func (s *AuthedLabelService) DeleteLabel(ctx context.Context, id influxdb.ID) er
 
 // CreateLabelMapping checks to see if the authorizer on context has write access to the label and the resource contained by the label mapping in creation.
 func (s *AuthedLabelService) CreateLabelMapping(ctx context.Context, m *influxdb.LabelMapping) error {
+	fmt.Println("authorizing create label mapping ")
+	fmt.Println("resource ID ", m.ResourceID)
+	fmt.Println("label ID ", m.LabelID)
 	l, err := s.s.FindLabelByID(ctx, m.LabelID)
 	if err != nil {
 		return err
 	}
+	auth, _ := icontext.GetAuthorizer(ctx)
+	fmt.Println(auth.PermissionSet())
+	fmt.Println(kithttp.OrgIDFromContext(ctx))
 	if _, _, err := authorizer.AuthorizeWrite(ctx, influxdb.LabelsResourceType, m.LabelID, l.OrgID); err != nil {
 		return err
 	}
